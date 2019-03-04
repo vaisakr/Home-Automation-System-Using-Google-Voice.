@@ -1,0 +1,64 @@
+#include <ESP8266WiFi.h>
+#include <FirebaseArduino.h>
+// Set these to run example.
+#define RELAY1  D2
+#define WIFI_SSID "sanoosh"
+#define WIFI_PASSWORD "sanooshpc"
+#define FIREBASE_DB_URL "home-automation-feacf.firebaseio.com"
+#defineFIREBASE_DB_SECRET_KEY "7S8NpG9zWryKoeyL8Tp3ZzAFIOeSOLrWnQewVKPM"
+void setup() {
+Serial.begin(9600);
+pinMode(RELAY1, OUTPUT);
+WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+Serial.print("connecting");
+while (WiFi.status() != WL_CONNECTED) {
+Serial.print(".");
+delay(500);
+  }
+Serial.println();
+Serial.print("connected: ");
+Serial.println(WiFi.localIP());
+Firebase.begin(FIREBASE_DB_URL, FIREBASE_DB_SECRET_KEY);
+Firebase.stream("/automation");  
+}
+void loop() {
+if (Firebase.failed())
+    {
+Serial.println("streaming error");
+Serial.println(Firebase.error());
+  }
+if (Firebase.available())
+    {
+FirebaseObject event = Firebase.readEvent();
+     String eventType = event.getString("type");
+eventType.toLowerCase();
+Serial.print(eventType);
+if (eventType == "put") 
+     {
+      String path = event.getString("path");
+      String data = event.getString("data");
+if (path.equals("/fan/value"))
+        {
+if (data.equals("off")) 
+          {
+digitalWrite(RELAY1,1);
+        } 
+else
+        {
+digitalWrite(RELAY1,0);
+        }
+      }
+else if (path.equals("/light/value")) 
+      {
+if (data.equals("off"))
+        {
+digitalWrite(RELAY1,1);
+        }
+else
+          {
+digitalWrite(RELAY1,0);
+        }
+    }
+   }
+  }
+}
